@@ -173,8 +173,16 @@ export class LangiumGenerator extends Generator {
 
         const referencedTsconfigBaseName = this.answers.includeTest ? 'tsconfig.src.json' : 'tsconfig.json';
         const templateCopyOptions: CopyOptions = {
-            process: content => this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, referencedTsconfigBaseName, content),
-            processDestinationPath: path => this._replaceTemplateNames(languageId, path)
+            process: (content, filepath) => {
+               /* console.log('filepath = '+filepath);
+                if (isBinaryFileSync(filepath)) {
+                    console.log(`Skipping binary file: ${filepath}`);
+                    return content; 
+                }*/
+                
+                return this._replaceTemplateWords(fileExtensionGlob, languageName, languageId, referencedTsconfigBaseName, content);
+            },
+            processDestinationPath: path => this._replaceTemplateNames(languageId, path), 
         };
 
         this.sourceRoot(path.join(__dirname, TEMPLATE_CORE_DIR));
@@ -188,6 +196,8 @@ export class LangiumGenerator extends Generator {
                 templateCopyOptions
             );
         }
+
+        //this.fs.copy(this.templatePath('media'), this._extensionPath('media'));
 
         // .gitignore files don't get published to npm, so we need to copy it under a different name
         this.fs.copy(this.templatePath('../gitignore.txt'), this._extensionPath('.gitignore'));

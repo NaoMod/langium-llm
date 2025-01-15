@@ -88,5 +88,15 @@
         "@typescript-eslint/triple-slash-reference": "error",       // ban /// <reference />, prefer imports
         "@typescript-eslint/type-annotation-spacing": "error",      // consistent space around colon ':'
         "@typescript-eslint/consistent-type-imports": "error"       // use import type whenever import is only used for type checking
-    }
+    },
+    "overrides": [
+        {
+            "files": [
+                "packages/generator-langium/templates/vscode/src/extension/main.ts"
+            ],
+            "rules": {
+                "header": []
+            }
+        }
+    ]
 }

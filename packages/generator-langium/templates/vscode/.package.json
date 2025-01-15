@@ -7,20 +7,44 @@
         "Programming Languages"
     ],
     "contributes": {
-        "languages": [{
-            "id": "<%= language-id %>",
-            "aliases": ["<%= RawLanguageName %>", "<%= language-id %>"],
-            "extensions": "<%= file-extension %>",
-            "configuration": "./language-configuration.json"
-        }],
-        "grammars": [{
-            "language": "<%= language-id %>",
-            "scopeName": "source.<%= language-id %>",
-            "path": "syntaxes/<%= language-id %>.tmLanguage.json"
-        }]
+        "languages": [
+            {
+                "id": "<%= language-id %>",
+                "aliases": [
+                    "<%= RawLanguageName %>",
+                    "<%= language-id %>"
+                ],
+                "extensions": "<%= file-extension %>",
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "<%= language-id %>",
+                "scopeName": "source.<%= language-id %>",
+                "path": "syntaxes/<%= language-id %>.tmLanguage.json"
+            }
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "secondaryPanel",
+                    "title": "DT LLM Chat",
+                    "icon": "media/images/icon.png"
+                }
+            ]
+        },
+        "views": {
+            "secondaryPanel": [
+                {
+                    "id": "geminiUiView",
+                    "name": "DT LLM Chat",
+                    "type": "webview"
+                }
+            ]
+        }
     },
     "activationEvents": [
-        "onLanguage:<%= language-id %>"
     ],
     "main": "./out/extension/main.cjs",
     "scripts": {

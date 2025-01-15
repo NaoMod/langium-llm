@@ -1,10 +1,11 @@
 {
     "name": "<%= extension-name %>",
     "description": "Please enter a brief description here",
-    "version": "0.0.1",
+    "version": "0.0.1-SNAPSHOT",
     "files": [
         "out",
-        "src"
+        "src",
+        "media"
     ],
     "type": "module",
     "scripts": {
