@@ -23,11 +23,11 @@ export interface LLMResponse {
 }
 
 const FILE_EXTENSION = <%= file-extension %>;
-const EXTENSION_NAME = /<%= extension-name %>/g;
+const LANGUAGE_ID = '<%= language-id %>';
 
 const grammarPath = path.resolve(
     __dirname,
-    `../../src/language/${EXTENSION_NAME}.langium`
+    `../../src/language/${LANGUAGE_ID}.langium`
   );
   const langiumGrammar = fs.readFileSync(grammarPath, "utf-8");
 
