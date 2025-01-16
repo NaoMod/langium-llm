@@ -1,3 +1,4 @@
+import * as fs from "fs";
 import type {
     LanguageClientOptions,
     ServerOptions,
@@ -5,6 +6,8 @@ import type {
 import * as vscode from 'vscode';
 import * as path from 'node:path';
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js';
+import { PromptTemplate } from "@langchain/core/prompts";
+import { askToGemini } from "../lib/llms.js";
 
 let client: LanguageClient;
 
@@ -18,6 +21,15 @@ export interface LLMResponse {
     type: LLM_RESPONSE_TYPE;
     message: string;
 }
+
+const FILE_EXTENSION = <%= file-extension %>;
+const EXTENSION_NAME = /<%= extension-name %>/g;
+
+const grammarPath = path.resolve(
+    __dirname,
+    `../../src/language/${EXTENSION_NAME}.langium`
+  );
+  const langiumGrammar = fs.readFileSync(grammarPath, "utf-8");
 
 // This function is called when the extension is activated
 export function activate(context: vscode.ExtensionContext): void {
@@ -72,11 +84,58 @@ class GeminiUiViewProvider implements vscode.WebviewViewProvider {
                         });
                         break;
                     case 'sendMessage':
-                        webviewView.webview.postMessage({
-                            command: 'geminiMessage',
-                            text: 'User: ' + message.text,
-                        });
-                        break;
+                        preparePromptForLLM(message.text)
+              .then((editorText) => {
+                console.log("LLM RESPONSE: ", editorText);
+
+                const editor = vscode.window.activeTextEditor;
+                let editorContentType: string;
+
+                // DTT Execution Mode
+                if (
+                  editor &&
+                  editor.document.languageId === FILE_EXTENSION[0]
+                ) {
+                  editorContentType = FILE_EXTENSION[0];
+
+                  const geminiRefreshMessage: LLMResponse = {
+                    type: LLM_RESPONSE_TYPE.REFRESH,
+                    message: "The editor has been updated.",
+                  };
+
+                  webviewView.webview.postMessage({
+                    command: "geminiMessage",
+                    text: geminiRefreshMessage,
+                  });
+
+                  this.updateCurrentEditor(editorText, editorContentType);
+                } else {
+                  const geminiMessage: LLMResponse = {
+                    type: LLM_RESPONSE_TYPE.DEFAULT,
+                    message: editorText,
+                  };
+
+                  webviewView.webview.postMessage({
+                    command: "geminiMessage",
+                    text: geminiMessage,
+                  });
+                }
+              })
+              .catch((error) => {
+                console.error(`${error}`);
+                vscode.window.showErrorMessage(`${error}`);
+
+                const geminiErrorMessage: LLMResponse = {
+                  type: LLM_RESPONSE_TYPE.ERROR,
+                  message: "An error has occurred.",
+                };
+
+                webviewView.webview.postMessage({
+                  command: "geminiMessage",
+                  text: geminiErrorMessage,
+                });
+              }); // Invoke the function with the original message typed
+            break;
                     case 'openNewEditor':
                         vscode.commands.executeCommand(
                             'extension.openNewEditor',
@@ -90,10 +149,48 @@ class GeminiUiViewProvider implements vscode.WebviewViewProvider {
         );
     }
 
+    private async updateCurrentEditor(val: string, lang: string) {
+        const editor = vscode.window.activeTextEditor;
+        let textDocument;
+    
+        if (!editor) {
+          // Open-up a new editor and set content
+          // Create a new untitled document with initial content
+          textDocument = await vscode.workspace.openTextDocument({
+            language: lang,
+            content: val,
+          });
+    
+          // Show the new document in a new editor tab
+          await vscode.window.showTextDocument(textDocument, {
+            preview: false, // Open as a new tab, not in preview mode
+          });
+        } else {
+          //Set content in the current editor
+          // Use the editor to edit the document's text
+          editor
+            .edit((editBuilder) => {
+              // Replace the full range of the document with new text
+              const document = editor.document;
+              const fullRange = new vscode.Range(
+                document.positionAt(0), // Start position
+                document.positionAt(document.getText().length) // End position
+              );
+              editBuilder.replace(fullRange, val);
+            })
+            .then((success) => {
+              if (!success) {
+                vscode.window.showErrorMessage("Failed to set document content.");
+              }
+            });
+        }
+    
+        return;
+      }
+
     private getWebviewContent(webviewView: vscode.WebviewView): string {
         const styleUri = this.getWebviewUri('media/style.css', webviewView);
         const scriptUri = this.getWebviewUri('media/script.js', webviewView);
-        const FILE_EXTENSION = <%= file-extension %>;
 
         return `
         <!DOCTYPE html>
@@ -137,63 +234,61 @@ class GeminiUiViewProvider implements vscode.WebviewViewProvider {
         return webviewView.webview.asWebviewUri(onDiskPath).toString();
     }
 }
-/*
+
 async function preparePromptForLLM(userQuestion: string) {
     let userInput: string, mainPrompt: PromptTemplate, formattedPrompt: string;
-
+  
     const editor = vscode.window.activeTextEditor;
     const dttMode: boolean =
       editor !== undefined &&
-      editor.document.languageId === 'digital-twin-transportation';
-
+      editor.document.languageId === FILE_EXTENSION[0];
+  
     if (dttMode) {
-        const inputVariables: string[] = ['langiumGrammar', 'userQuestion'];
-
-        mainPrompt = new PromptTemplate({
-            inputVariables: inputVariables,
-            template:
-          'Given the following Langium grammar, {userQuestion}? \n {langiumGrammar} \n',
-        });
-
-        if (editor && editor.document.getText() !== '') {
-            mainPrompt.template += 'Consider this input model: \n {userInput} \n.';
-            userInput = editor.document.getText();
-            // eslint-disable-next-line quotes
-            inputVariables.push("userInput");
-
-            mainPrompt.template += `
+      const inputVariables: string[] = ["langiumGrammar", "userQuestion"];
+  
+      mainPrompt = new PromptTemplate({
+        inputVariables: inputVariables,
+        template:
+          "Given the following Langium grammar, {userQuestion}? \n {langiumGrammar} \n",
+      });
+  
+      if (editor && editor.document.getText() !== "") {
+        mainPrompt.template += "Consider this input model: \n {userInput} \n.";
+        userInput = editor.document.getText();
+        inputVariables.push("userInput");
+  
+        mainPrompt.template += `
             I expect the response directly in the corresponding VALID Langium textual syntax according to the grammar provided, without any markdown and/or backticks, neither Model object root element. Also terminal types must be valid.`;
-
-            formattedPrompt = await mainPrompt.format({
-                langiumGrammar: langiumGrammar,
-                userInput: userInput,
-                userQuestion: userQuestion,
-            });
-        } else {
-            mainPrompt.template += `
-            I expect the response directly in the corresponding VALID Langium textual syntax according to the grammar provided, without any markdown and/or backticks, neither Model object root element. Also terminal types must be valid.`;
-
-            formattedPrompt = await mainPrompt.format({
-                langiumGrammar: langiumGrammar,
-                userQuestion: userQuestion,
-            });
-        }
-    } else {
-        mainPrompt = new PromptTemplate({
-            inputVariables: ['userQuestion'],
-            template: '{userQuestion}',
-        });
-
+  
         formattedPrompt = await mainPrompt.format({
-            userQuestion: userQuestion,
+          langiumGrammar: langiumGrammar,
+          userInput: userInput,
+          userQuestion: userQuestion,
         });
+      } else {
+        mainPrompt.template += `
+            I expect the response directly in the corresponding VALID Langium textual syntax according to the grammar provided, without any markdown and/or backticks, neither Model object root element. Also terminal types must be valid.`;
+  
+        formattedPrompt = await mainPrompt.format({
+          langiumGrammar: langiumGrammar,
+          userQuestion: userQuestion,
+        });
+      }
+    } else {
+      mainPrompt = new PromptTemplate({
+        inputVariables: ["userQuestion"],
+        template: "{userQuestion}",
+      });
+  
+      formattedPrompt = await mainPrompt.format({
+        userQuestion: userQuestion,
+      });
     }
-
-    console.log('formattedPrompt => ', `${formattedPrompt}`);
-
+  
+    console.log("formattedPrompt => ", `${formattedPrompt}`);
+  
     return askToGemini(formattedPrompt, true);
-}
-*/
+  }
 
 // This function is called when the extension is deactivated.
 export function deactivate(): Thenable<void> | undefined {

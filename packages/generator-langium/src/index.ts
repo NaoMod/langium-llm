@@ -3,7 +3,7 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-
+//import { isBinaryFileSync } from 'isbinaryfile';
 import Generator from 'yeoman-generator';
 import type { CopyOptions } from 'mem-fs-editor';
 import _ from 'lodash';
@@ -174,7 +174,7 @@ export class LangiumGenerator extends Generator {
         const referencedTsconfigBaseName = this.answers.includeTest ? 'tsconfig.src.json' : 'tsconfig.json';
         const templateCopyOptions: CopyOptions = {
             process: (content, filepath) => {
-               /* console.log('filepath = '+filepath);
+               /*console.log('filepath = '+filepath);
                 if (isBinaryFileSync(filepath)) {
                     console.log(`Skipping binary file: ${filepath}`);
                     return content; 

@@ -54,7 +54,11 @@
     },
     "dependencies": {
         "vscode-languageclient": "~9.0.1",
-        "vscode-languageserver": "~9.0.1"
+        "vscode-languageserver": "~9.0.1",
+        "dotenv": "^16.4.5",
+        "langchain": "^0.3.11",
+        "@langchain/core": "^0.3.30",
+        "@langchain/google-genai": "^0.1.6"
     },
     "devDependencies": {
         "@types/vscode": "~1.67.0",
