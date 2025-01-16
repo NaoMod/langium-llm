@@ -94,7 +94,7 @@ class GeminiUiViewProvider implements vscode.WebviewViewProvider {
                 // Editor execution mode
                 if (
                   editor &&
-                  editor.document.languageId === LANGUAGE_ID[0]
+                  editor.document.languageId === LANGUAGE_ID
                 ) {
                   editorContentType = FILE_EXTENSION[0];
 
