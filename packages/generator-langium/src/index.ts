@@ -3,7 +3,7 @@
  * This program and the accompanying materials are made available under the
  * terms of the MIT License, which is available in the project root.
  ******************************************************************************/
-//import { isBinaryFileSync } from "isbinaryfile";
+import fse from 'fs-extra';
 import Generator from "yeoman-generator";
 import type { CopyOptions } from "mem-fs-editor";
 import _ from "lodash";
@@ -179,11 +179,11 @@ export class LangiumGenerator extends Generator {
             : "tsconfig.json";
         const templateCopyOptions: CopyOptions = {
             process: (content, filepath) => {
-                // If the file is binary, skip processing
-                /*if (isBinaryFileSync(filepath)) {
-                    this.log(`Skipping binary file: ${filepath}`);
-                    return content; // Return the original content
-                }*/
+
+                if (filepath.endsWith('.png') || filepath.endsWith('.jpg')) {
+                    this.log(`Skipping image file: ${filepath}`);
+                    return content;
+                }
 
                 // Process only text files
                 return this._replaceTemplateWords(
@@ -208,10 +208,13 @@ export class LangiumGenerator extends Generator {
             undefined,
             4
         );
-
-        /*this.log(`Source: ${this.templatePath("../vscode/media/images")}`);
+        
+        this.log(`Source: ${this.templatePath("../vscode/media/images")}`);
         this.log(`Destination: ${this._extensionPath("media/images")}`);
 
+        fse.copySync(`${this.templatePath("../vscode/media/images")}`, `${this._extensionPath("media/images")}`, { overwrite: true });
+        
+        /*
         this.fs.copy(
             this.templatePath("../vscode/media/images"),
             this._extensionPath("media/images"),
