@@ -91,10 +91,10 @@ class GeminiUiViewProvider implements vscode.WebviewViewProvider {
                 const editor = vscode.window.activeTextEditor;
                 let editorContentType: string;
 
-                // DTT Execution Mode
+                // Editor execution mode
                 if (
                   editor &&
-                  editor.document.languageId === FILE_EXTENSION[0]
+                  editor.document.languageId === LANGUAGE_ID[0]
                 ) {
                   editorContentType = FILE_EXTENSION[0];
 
@@ -203,7 +203,7 @@ class GeminiUiViewProvider implements vscode.WebviewViewProvider {
         </head>
         <body>
           <p class="infoMessage">
-            Open a new editor with '${FILE_EXTENSION}' extension to input a Langium model to the LLM.
+            Open a new editor with '${FILE_EXTENSION[0]}' extension to input a Langium model to the LLM.
           </p>
           
           <div class="chat-container" id="chat"></div>
@@ -239,11 +239,11 @@ async function preparePromptForLLM(userQuestion: string) {
     let userInput: string, mainPrompt: PromptTemplate, formattedPrompt: string;
   
     const editor = vscode.window.activeTextEditor;
-    const dttMode: boolean =
+    const editorMode: boolean =
       editor !== undefined &&
-      editor.document.languageId === FILE_EXTENSION[0];
+      editor.document.languageId === LANGUAGE_ID;
   
-    if (dttMode) {
+    if (editorMode) {
       const inputVariables: string[] = ["langiumGrammar", "userQuestion"];
   
       mainPrompt = new PromptTemplate({
@@ -287,7 +287,7 @@ async function preparePromptForLLM(userQuestion: string) {
   
     console.log("formattedPrompt => ", `${formattedPrompt}`);
   
-    return askToGemini(formattedPrompt, true);
+    return askToGemini(formattedPrompt, editorMode);
   }
 
 // This function is called when the extension is deactivated.
