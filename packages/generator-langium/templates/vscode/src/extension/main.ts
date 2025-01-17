@@ -1,4 +1,3 @@
-import * as fs from "fs";
 import type {
     LanguageClientOptions,
     ServerOptions,
@@ -6,8 +5,7 @@ import type {
 import * as vscode from 'vscode';
 import * as path from 'node:path';
 import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js';
-import { PromptTemplate } from "@langchain/core/prompts";
-import { askToGemini } from "../lib/llms.js";
+import { llmPromptPreparation } from "../lib/llm-services.js";
 
 let client: LanguageClient;
 
@@ -24,12 +22,6 @@ export interface LLMResponse {
 
 const FILE_EXTENSION = <%= file-extension %>;
 const LANGUAGE_ID = '<%= language-id %>';
-
-const grammarPath = path.resolve(
-    __dirname,
-    `../../src/language/${LANGUAGE_ID}.langium`
-  );
-  const langiumGrammar = fs.readFileSync(grammarPath, "utf-8");
 
 // This function is called when the extension is activated
 export function activate(context: vscode.ExtensionContext): void {
@@ -84,7 +76,7 @@ class GeminiUiViewProvider implements vscode.WebviewViewProvider {
                         });
                         break;
                     case 'requestMessage':
-                        preparePromptForLLM(message.text)
+                        llmPromptPreparation(message.text)
               .then((editorText) => {
                 console.log("LLM RESPONSE: ", editorText);
 
@@ -234,61 +226,6 @@ class GeminiUiViewProvider implements vscode.WebviewViewProvider {
         return webviewView.webview.asWebviewUri(onDiskPath).toString();
     }
 }
-
-async function preparePromptForLLM(userQuestion: string) {
-    let userInput: string, mainPrompt: PromptTemplate, formattedPrompt: string;
-  
-    const editor = vscode.window.activeTextEditor;
-    const editorMode: boolean =
-      editor !== undefined &&
-      editor.document.languageId === LANGUAGE_ID;
-  
-    if (editorMode) {
-      const inputVariables: string[] = ["langiumGrammar", "userQuestion"];
-  
-      mainPrompt = new PromptTemplate({
-        inputVariables: inputVariables,
-        template:
-          "Given the following Langium grammar, {userQuestion}? \n {langiumGrammar} \n",
-      });
-  
-      if (editor && editor.document.getText() !== "") {
-        mainPrompt.template += "Consider this input model: \n {userInput} \n.";
-        userInput = editor.document.getText();
-        inputVariables.push("userInput");
-  
-        mainPrompt.template += `
-            I expect the response directly in the corresponding VALID Langium textual syntax according to the grammar provided, without any markdown and/or backticks, neither Model object root element. Also terminal types must be valid.`;
-  
-        formattedPrompt = await mainPrompt.format({
-          langiumGrammar: langiumGrammar,
-          userInput: userInput,
-          userQuestion: userQuestion,
-        });
-      } else {
-        mainPrompt.template += `
-            I expect the response directly in the corresponding VALID Langium textual syntax according to the grammar provided, without any markdown and/or backticks, neither Model object root element. Also terminal types must be valid.`;
-  
-        formattedPrompt = await mainPrompt.format({
-          langiumGrammar: langiumGrammar,
-          userQuestion: userQuestion,
-        });
-      }
-    } else {
-      mainPrompt = new PromptTemplate({
-        inputVariables: ["userQuestion"],
-        template: "{userQuestion}",
-      });
-  
-      formattedPrompt = await mainPrompt.format({
-        userQuestion: userQuestion,
-      });
-    }
-  
-    console.log("formattedPrompt => ", `${formattedPrompt}`);
-  
-    return askToGemini(formattedPrompt, editorMode);
-  }
 
 // This function is called when the extension is deactivated.
 export function deactivate(): Thenable<void> | undefined {
