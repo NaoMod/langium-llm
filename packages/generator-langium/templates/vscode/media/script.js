@@ -88,7 +88,7 @@ window.addEventListener("message", (event) => {
   }
 });
 
-function sendMessage() {
+function send() {
   const messageText = inputField.value;
   if (messageText.trim() === "") return; // Prevent sending empty messages
 
@@ -123,7 +123,7 @@ function sendMessage() {
 
   chatContainer.scrollTop = chatContainer.scrollHeight; // Scroll to the bottom of the chat
 
-  vscode.postMessage({ command: "sendMessage", text: messageText }); // Send message to VS Code
+  vscode.postMessage({ command: "requestMessage", text: messageText }); // Send message to VS Code
 
   inputField.value = ""; // Clear the messageUser2 after sending
   typingIndicator.style.display = "block"; // Show typing indicator while waiting for response
