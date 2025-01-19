@@ -115,6 +115,7 @@ export async function llmFetchResponse(
       tracer ? { callbacks: [tracer] } : {}
     );
 
+    console.log("request prompt = ", formattedPrompt);
     console.log("rawResponse.content = ", rawResponse.content);
 
     if(!validation) {
@@ -148,8 +149,7 @@ export async function llmFetchResponse(
         "Not a correct model received, trying again... Attempt #",
         retries
       );
-      formattedPrompt = `${error}
-          ${formattedPrompt}`;
+      formattedPrompt = `${error}`;
       retries += 1;
     }
   }
