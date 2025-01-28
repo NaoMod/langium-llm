@@ -5,7 +5,7 @@ import * as fs from "fs";
 import * as path from "node:path";
 
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { PromptTemplate } from "@langchain/core/prompts";
+import { PromptTemplate, TypedPromptInputValues } from "@langchain/core/prompts";
 import { LangChainTracer } from "langchain/callbacks";
 import { fileURLToPath } from "node:url";
 import { LangiumServices } from "../language/langium-services.js";
@@ -37,58 +37,53 @@ const langiumGrammar = fs.readFileSync(grammarPath, "utf-8");
 
 export async function llmPromptPreparation(userQuestion: string) {
     let userInput: string, mainPrompt: PromptTemplate, formattedPrompt: string;
-  
+
     const editor = vscode.window.activeTextEditor;
     const editorMode: boolean =
-      editor !== undefined &&
-      editor.document.languageId === LANGUAGE_ID;
-  
+        editor !== undefined && editor.document.languageId === LANGUAGE_ID;
+
     if (editorMode) {
-      const inputVariables: string[] = ["langiumGrammar", "userQuestion"];
-  
-      mainPrompt = new PromptTemplate({
-        inputVariables: inputVariables,
-        template:
-          "Given the following Langium grammar, {userQuestion}? \n {langiumGrammar} \n",
-      });
-  
-      if (editor && editor.document.getText() !== "") {
-        mainPrompt.template += "Consider this input model: \n {userInput} \n.";
-        userInput = editor.document.getText();
-        inputVariables.push("userInput");
-  
-        mainPrompt.template += `
-            I expect the response directly in the corresponding VALID Langium textual syntax according to the grammar provided, without any markdown and/or backticks, neither Model object root element. Also terminal types must be valid.`;
-  
-        formattedPrompt = await mainPrompt.format({
-          langiumGrammar: langiumGrammar,
-          userInput: userInput,
-          userQuestion: userQuestion,
+        const inputVariables: string[] = ["langiumGrammar", "userQuestion"];
+        let promptInputs: TypedPromptInputValues<any> = {
+            langiumGrammar: langiumGrammar,
+            userQuestion: userQuestion
+        }
+
+        mainPrompt = new PromptTemplate({
+            inputVariables: inputVariables,
+            template:
+                "Given the following Langium grammar: \n {langiumGrammar}, ", //\n
         });
-      } else {
-        mainPrompt.template += `
-            I expect the response directly in the corresponding VALID Langium textual syntax according to the grammar provided, without any markdown and/or backticks, neither Model object root element. Also terminal types must be valid.`;
-  
-        formattedPrompt = await mainPrompt.format({
-          langiumGrammar: langiumGrammar,
-          userQuestion: userQuestion,
-        });
-      }
+
+        if (editor && editor.document.getText() !== "") {
+            mainPrompt.template +=
+                "and this input model: \n {userInput}, \n ";
+            userInput = editor.document.getText();
+            inputVariables.push("userInput");
+
+            promptInputs = {
+                ...promptInputs,
+                userInput: userInput
+            }
+        }
+        mainPrompt.template += `{userQuestion}? \n I expect the response directly in the corresponding VALID Langium textual syntax according to the grammar provided, without any markdown and/or backticks, neither Model object root element. Also terminal types must be valid.`;
+
+        formattedPrompt = await mainPrompt.format(promptInputs);
     } else {
-      mainPrompt = new PromptTemplate({
-        inputVariables: ["userQuestion"],
-        template: "{userQuestion}",
-      });
-  
-      formattedPrompt = await mainPrompt.format({
-        userQuestion: userQuestion,
-      });
+        mainPrompt = new PromptTemplate({
+            inputVariables: ["userQuestion"],
+            template: "{userQuestion}",
+        });
+
+        formattedPrompt = await mainPrompt.format({
+            userQuestion: userQuestion,
+        });
     }
-  
-    console.log("formattedPrompt => ", `${formattedPrompt}`);
-  
+
+    console.log("formattedPrompt = ", `${formattedPrompt}`);
+
     return llmFetchResponse(formattedPrompt, editorMode);
-  }
+}
 
 export async function llmFetchResponse(
   formattedPrompt: string,
@@ -115,7 +110,6 @@ export async function llmFetchResponse(
       tracer ? { callbacks: [tracer] } : {}
     );
 
-    console.log("request prompt = ", formattedPrompt);
     console.log("rawResponse.content = ", rawResponse.content);
 
     if(!validation) {
