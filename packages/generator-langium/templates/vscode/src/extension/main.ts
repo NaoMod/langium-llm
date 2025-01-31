@@ -76,7 +76,17 @@ class GeminiUiViewProvider implements vscode.WebviewViewProvider {
                         });
                         break;
                     case 'requestMessage':
-                        llmPromptPreparation(message.text)
+                        const editor = vscode.window.activeTextEditor;
+                        const editorMode: boolean =
+                            editor !== undefined &&
+                            editor.document.languageId === LANGUAGE_ID;
+                        let editorTextInput = "";    
+
+                        if (editor && editor.document.getText() !== "") {
+                            editorTextInput = editor.document.getText();
+                        }
+
+                        llmPromptPreparation(message.text, editorMode, editorTextInput)
               .then((editorText) => {
                 console.log("LLM RESPONSE: ", editorText);
 

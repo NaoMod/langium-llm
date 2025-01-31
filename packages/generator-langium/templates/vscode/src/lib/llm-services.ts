@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 
-import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "node:path";
 
@@ -21,29 +20,26 @@ const fullPath = path.resolve(dirname, "../../config.env");
 console.log("fullPath:", fullPath);
 
 const envConfigResult = dotenv.config({
-    path: fullPath,
+  path: fullPath,
 });
 
 if (envConfigResult.error) {
-    console.error("Error loading .env file:", envConfigResult.error);
+  console.error("Error loading .env file:", envConfigResult.error);
 } else {
-    console.log("configPath:", envConfigResult);
+  console.log("configPath:", envConfigResult);
 }
 
 const LANGUAGE_ID = "<%= language-id %>";
 
 const grammarPath = path.resolve(
-    __dirname,
+    dirname,
     `../../src/language/${LANGUAGE_ID}.langium`
 );
 const langiumGrammar = fs.readFileSync(grammarPath, "utf-8");
 
-export async function llmPromptPreparation(userQuestion: string) {
-    let userInput: string, mainPrompt: PromptTemplate, formattedPrompt: string;
-
-    const editor = vscode.window.activeTextEditor;
-    const editorMode: boolean =
-        editor !== undefined && editor.document.languageId === LANGUAGE_ID;
+export async function llmPromptPreparation(userQuestion: string, 
+    editorMode: boolean = false, userEditorText: string = "") {
+    let mainPrompt: PromptTemplate, formattedPrompt: string;
 
     if (editorMode) {
         const inputVariables: string[] = ["langiumGrammar", "userQuestion"];
@@ -58,14 +54,13 @@ export async function llmPromptPreparation(userQuestion: string) {
                 "Given the following Langium grammar: \n {langiumGrammar}, ", //\n
         });
 
-        if (editor && editor.document.getText() !== "") {
+        if (userEditorText !== "") {
             mainPrompt.template += "and this input model: \n {userInput}, \n ";
-            userInput = editor.document.getText();
             inputVariables.push("userInput");
 
             promptInputs = {
                 ...promptInputs,
-                userInput: userInput,
+                userInput: userEditorText,
             };
         }
         mainPrompt.template += `{userQuestion}? \n I expect the response directly in the corresponding VALID Langium textual syntax according to the grammar provided, without any markdown and/or backticks, neither Model object root element. Also terminal types must be valid.`;
@@ -105,7 +100,7 @@ export async function llmFetchResponse(
     const currentRequest = formattedPrompt;
 
     let retries = 1;
-    const MAX_RETRIES = 3;
+    const MAX_RETRIES = 5;
     const parser = new OutputParserMarkdown();
     while (retries <= MAX_RETRIES) {
         // LLM invoke
