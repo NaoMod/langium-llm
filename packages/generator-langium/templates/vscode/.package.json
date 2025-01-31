@@ -50,7 +50,8 @@
     "scripts": {
         "vscode:prepublish": "npm run build && npm run lint",
         "build": "tsc -b <%= tsconfig %> && node esbuild.mjs",
-        "watch": "concurrently -n tsc,esbuild -c blue,yellow \"tsc -b <%= tsconfig %> --watch\" \"node esbuild.mjs --watch\""
+        "watch": "concurrently -n tsc,esbuild -c blue,yellow \"tsc -b <%= tsconfig %> --watch\" \"node esbuild.mjs --watch\"",
+        "start:experiment1": "npm run build && node ./out/experiments/1/main.js"
     },
     "dependencies": {
         "vscode-languageclient": "~9.0.1",
