@@ -128,13 +128,13 @@ class GeminiUiViewProvider implements vscode.WebviewViewProvider {
                 });
               }); // Invoke the function with the original message typed
             break;
-                    case 'openNewEditor':
-                        vscode.commands.executeCommand(
-                            'extension.openNewEditor',
-                            message.text
-                        );
-                        break;
-                }
+            case 'openNewEditor':
+                vscode.commands.executeCommand(
+                    'extension.openNewEditor',
+                     message.text
+                );
+            break;
+            }
             },
             undefined,
             this._context.subscriptions
