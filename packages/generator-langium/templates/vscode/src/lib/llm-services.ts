@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 
-import * as fs from "fs";
 import * as path from "node:path";
 
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
@@ -10,9 +9,9 @@ import {
 } from "@langchain/core/prompts";
 import { LangChainTracer } from "langchain/callbacks";
 import { fileURLToPath } from "node:url";
-import { LangiumServices } from "../language/langium-services.js";
-import { ParseResult } from "langium";
-import { OutputParserMarkdown } from "./utils.js";
+import { JsonOutputParserMarkdown } from "./utils.js";
+import { convertLangiumSyntax2Json, validateJSONModel } from "./converters.js";
+import { schema as jsonSchema } from "../language/dtt.schema.json.js";
 
 const dirname = getDirname();
 const fullPath = path.resolve(dirname, "../../config.env");
@@ -20,50 +19,43 @@ const fullPath = path.resolve(dirname, "../../config.env");
 console.log("fullPath:", fullPath);
 
 const envConfigResult = dotenv.config({
-  path: fullPath,
+    path: fullPath,
 });
 
 if (envConfigResult.error) {
-  console.error("Error loading .env file:", envConfigResult.error);
+    console.error("Error loading .env file:", envConfigResult.error);
 } else {
-  console.log("configPath:", envConfigResult);
+    console.log("configPath:", envConfigResult);
 }
 
-const LANGUAGE_ID = "<%= language-id %>";
-
-const grammarPath = path.resolve(
-    dirname,
-    `../../src/language/${LANGUAGE_ID}.langium`
-);
-const langiumGrammar = fs.readFileSync(grammarPath, "utf-8");
-
-export async function llmPromptPreparation(userQuestion: string, 
+export async function llmPromptPreparation(userQuestion: string,
     editorMode: boolean = false, userEditorText: string = "") {
-    let mainPrompt: PromptTemplate, formattedPrompt: string;
+    let userInput: string, mainPrompt: PromptTemplate, formattedPrompt: string;
 
     if (editorMode) {
-        const inputVariables: string[] = ["langiumGrammar", "userQuestion"];
+        const inputVariables: string[] = ["jsonSchemaTxt", "userQuestion"];
         let promptInputs: TypedPromptInputValues<any> = {
-            langiumGrammar: langiumGrammar,
-            userQuestion: userQuestion,
+            jsonSchemaTxt: jsonSchema,
+            userQuestion: userQuestion
         };
 
         mainPrompt = new PromptTemplate({
             inputVariables: inputVariables,
             template:
-                "Given the following Langium grammar: \n {langiumGrammar}, ", //\n
+                "Given the following Langium grammar translated to JSON Schema: {jsonSchemaTxt} ", //\n
         });
 
         if (userEditorText !== "") {
-            mainPrompt.template += "and this input model: \n {userInput}, \n ";
+            mainPrompt.template += "and this JSON model as input: {userInput},";
+            userInput = convertLangiumSyntax2Json(userEditorText);
             inputVariables.push("userInput");
 
             promptInputs = {
                 ...promptInputs,
-                userInput: userEditorText,
+                userInput: userInput
             };
         }
-        mainPrompt.template += `{userQuestion}? \n I expect the response directly in the corresponding VALID Langium textual syntax according to the grammar provided, without any markdown and/or backticks, neither Model object root element. Also terminal types must be valid.`;
+        mainPrompt.template += `{userQuestion}? \n I expect the response as raw JSON data without any markdown formatting, backticks, or other annotations, according the JSON Schema reported, directly with a root object 'Model'. Moreover, properties must be compliant with their respective terminal types.`;
 
         formattedPrompt = await mainPrompt.format(promptInputs);
     } else {
@@ -79,12 +71,13 @@ export async function llmPromptPreparation(userQuestion: string,
 
     console.log("formattedPrompt = ", `${formattedPrompt}`);
 
-    return llmFetchResponse(formattedPrompt, editorMode);
+    return editorMode ? llmFetchResponse(formattedPrompt, jsonSchema)
+        : llmFetchResponse(formattedPrompt);
 }
 
 export async function llmFetchResponse(
     formattedPrompt: string,
-    validation: boolean = false,
+    jsonSchema?: object,
     tracer?: LangChainTracer
 ): Promise<any> {
     const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
@@ -97,66 +90,52 @@ export async function llmFetchResponse(
         apiKey: GOOGLE_API_KEY,
     });
 
-    const currentRequest = formattedPrompt;
-
     let retries = 1;
     const MAX_RETRIES = 5;
-    const parser = new OutputParserMarkdown();
+    const parser = new JsonOutputParserMarkdown();
     while (retries <= MAX_RETRIES) {
         // LLM invoke
-        const rawResponse = await llm.invoke(
+        const rawResponse: any = await llm.invoke(
             formattedPrompt,
             tracer ? { callbacks: [tracer] } : {}
         );
 
         console.log("rawResponse.content = ", rawResponse.content);
 
-        if (!validation) {
+        if (!jsonSchema) {
             return rawResponse.content;
         }
 
+        // In this case validate the response as JSON valid object
         try {
-            const cleanedOutput = parser.parse(rawResponse.content as string);
-            const result: ParseResult =
-                LangiumServices.parser.LangiumParser.parse(cleanedOutput);
+            const outputParsed = await parser.parse(rawResponse.content as string);
+            const outputParsedString = JSON.stringify(outputParsed);
 
-            if (result.parserErrors && result.parserErrors.length > 0) {
+            validateJSONModel(outputParsedString, jsonSchema);
 
-                const errors: Array<{name: string, message: string}> = [];
-               
-                result.parserErrors.forEach((error) => {
-                    errors.push(
-                        { name: error.name, message: error.message }
-                    );
-                });
-
-                throw new Error(
-                    `The current response: \n ${
-                        rawResponse.content as string
-                    } \n, contains the following errors ${JSON.stringify(errors)}, so it doesn't represent a correct Langium model according its grammar. Please fix this model and return ONLY a correct one for the current request:\n${currentRequest}`
-                );
-            }
+            console.log("Valid JSON received:", outputParsedString);
 
             //Reset the retries counter
             if (retries > 0) {
                 retries = 0;
             }
 
-            return rawResponse.content;
-        } catch (error: any) {
+            return outputParsedString;
+        } catch (error) {
             console.warn(
-                "Not a correct model received, trying again... Attempt #",
+                "Not a valid JSON received, trying again... Attempt #",
                 retries
             );
-            formattedPrompt = `${error.message}`;
+            formattedPrompt = `The previous response did not contain a valid JSON. Please, return ONLY a correct JSON for the current request:
+          ${formattedPrompt}`;
             retries += 1;
         }
-    }
 
-    if (retries > MAX_RETRIES) {
-        throw new Error(
-            "Max retries reached, impossible to get a correct model from the LLM. Try again."
-        );
+        if (retries > MAX_RETRIES) {
+            throw new Error(
+                "Max retries reached, impossible to get a correct model from the LLM. Try again."
+            );
+        }
     }
 }
 
