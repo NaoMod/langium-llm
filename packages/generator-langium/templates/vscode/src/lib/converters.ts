@@ -1,0 +1,91 @@
+import { AstNode, LangiumDocument, URI } from "langium";
+import { NodeFileSystem } from "langium/node";
+import { create<%= LanguageName %>Services } from '../language/<%= language-id %>-module.js';
+import { Model } from "../language/generated/ast.js";
+import { Validator } from "@langchain/core/utils/json_schema";
+import { JsonSerializer } from "../langium-services.js";
+
+// retrieve the services for our language
+const services = create<%= LanguageName %>Services(NodeFileSystem).<%= LanguageName %>;
+
+const documentFactory = services.shared.workspace.LangiumDocumentFactory;
+
+// provide a conversion function from JSON to Langium syntax
+/**
+ * Generates a Langium syntax string from a JSON object
+ * @param json 
+ */
+export function convertJson2LangiumSyntax(json: any): string {
+  throw new Error("Not implemented yet");
+}
+
+/**
+ * Generates a JSON string from Langium model instance
+ * @param langiumText
+ * @returns JSON string
+ */
+export function convertLangiumSyntax2Json(
+  langiumText: string
+): string | never {
+  // Step 1: Parse the Langium model into structured data
+  const parsedModel: Model | undefined = langiumStringToAST(
+    langiumText
+  ) as Model;
+
+  if (!parsedModel) {
+    throw new Error("Langium string is unparsable. Check the input.");
+  }
+
+  const parsedModelString: string = JsonSerializer.serialize(parsedModel);
+  console.log("parsedModelString (via JsonSerializer) => ", parsedModelString);
+
+  return parsedModelString;
+}
+
+/**
+ * Parses and transforms a Langium string into a AST Model
+ * @param langiumString The Langium string model
+ * @returns Model or undefined if the Langium string model is unparsable
+ */
+export function langiumStringToAST(
+  langiumString: string
+): AstNode | undefined {
+  // Create a new document URI (required by Langium’s document services)
+  const uri = URI.parse("memory://model.langium");
+
+  // Parse the document into an AST
+  const document: LangiumDocument<AstNode> = documentFactory.fromString(
+    langiumString,
+    uri
+  );
+
+  // For checking possibly for parse errors
+  /*if (document.parseResult.lexerErrors.length > 0) {
+    console.error("Errors during parsing:", document.diagnostics);
+    return undefined;
+  }*/
+
+  return document.parseResult.value;
+}
+
+/**
+ * Validate a JSON model against a JSONSchema.
+ * @param schema
+ * @param model
+ * @returns
+ */
+export function validateJSONModel(model: string, schema: object) {
+  const validator = new Validator({ schema });
+
+  let result;
+
+  try {
+    JSON.parse(model);
+    result = validator.validate(model);
+    console.log(result);
+  } catch (error) {
+    throw new Error(`Validation failed: ${error}`);
+  }
+
+  return result.valid || false;
+}
