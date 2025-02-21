@@ -10,7 +10,7 @@ import {
 import { LangChainTracer } from "langchain/callbacks";
 import { fileURLToPath } from "node:url";
 import { JsonOutputParserMarkdown } from "./utils.js";
-import { convertLangiumSyntax2Json, validateJSONModel } from "./converters.js";
+import { langiumSyntax2JsonFormat, validateJSONModel } from "./converters.js";
 import { schema as jsonSchema } from "../language/dtt.schema.json.js";
 
 const dirname = getDirname();
@@ -47,7 +47,7 @@ export async function llmPromptPreparation(userQuestion: string,
 
         if (userEditorText !== "") {
             mainPrompt.template += "and this JSON model as input: {userInput},";
-            userInput = convertLangiumSyntax2Json(userEditorText);
+            userInput = langiumSyntax2JsonFormat(userEditorText);
             inputVariables.push("userInput");
 
             promptInputs = {
@@ -90,6 +90,8 @@ export async function llmFetchResponse(
         apiKey: GOOGLE_API_KEY,
     });
 
+    const currentRequest = formattedPrompt;
+
     let retries = 1;
     const MAX_RETRIES = 5;
     const parser = new JsonOutputParserMarkdown();
@@ -121,13 +123,14 @@ export async function llmFetchResponse(
             }
 
             return outputParsedString;
-        } catch (error) {
+        } catch (errors) {
             console.warn(
                 "Not a valid JSON received, trying again... Attempt #",
                 retries
             );
-            formattedPrompt = `The previous response did not contain a valid JSON. Please, return ONLY a correct JSON for the current request:
-          ${formattedPrompt}`;
+            formattedPrompt = `The current response: \n ${
+                rawResponse.content as string
+            } \n, contains the following errors ${JSON.stringify(errors)}, so it doesn't represent a correct JSON model according toits grammar. Please fix this model and return ONLY a correct one for the current request:\n${currentRequest}`
             retries += 1;
         }
 

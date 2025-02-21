@@ -8,7 +8,7 @@ import { LanguageClient, TransportKind } from 'vscode-languageclient/node.js';
 import { llmPromptPreparation } from "../lib/llm-services.js";
 import { Model } from "../language/generated/ast.js";
 import { JsonSerializer } from "../langium-services.js";
-import { convertJson2LangiumSyntax } from '../lib/converters.js';
+import { jsonFormat2LangiumSyntax } from '../lib/converters.js';
 
 let client: LanguageClient;
 
@@ -105,7 +105,7 @@ class GeminiUiViewProvider implements vscode.WebviewViewProvider {
                   const langiumModel: Model =
                     JsonSerializer.deserialize<Model>(editorText);
 
-                  editorText = convertJson2LangiumSyntax(langiumModel);
+                  editorText = jsonFormat2LangiumSyntax(langiumModel);
 
                   editorContentType = FILE_EXTENSION[0];
 

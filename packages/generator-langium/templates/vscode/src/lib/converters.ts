@@ -15,7 +15,7 @@ const documentFactory = services.shared.workspace.LangiumDocumentFactory;
  * Generates a Langium syntax string from a JSON object
  * @param json 
  */
-export function convertJson2LangiumSyntax(json: any): string {
+export function jsonFormat2LangiumSyntax(json: any): string {
   throw new Error("Not implemented yet");
 }
 
@@ -24,7 +24,7 @@ export function convertJson2LangiumSyntax(json: any): string {
  * @param langiumText
  * @returns JSON string
  */
-export function convertLangiumSyntax2Json(
+export function langiumSyntax2JsonFormat(
   langiumText: string
 ): string | never {
   // Step 1: Parse the Langium model into structured data
@@ -83,8 +83,8 @@ export function validateJSONModel(model: string, schema: object) {
     JSON.parse(model);
     result = validator.validate(model);
     console.log(result);
-  } catch (error) {
-    throw new Error(`Validation failed: ${error}`);
+  } catch (errors: any) {
+    throw new Error(errors);
   }
 
   return result.valid || false;
