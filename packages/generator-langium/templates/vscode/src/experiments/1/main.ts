@@ -18,7 +18,7 @@ const parse = parseHelper<Model>(services.<%= LanguageName %>);
 // Prompts
 const prompt1 = new PromptTemplate({
   inputVariables: ["currentModel", "finalModel"],
-  template: `I'm going to give you two models in Langium textual format. Tell me only a single change that we may perform on the first model to make it more similar to the second model: \n {currentModel} \n and \n {finalModel}. \n Please, give me directly the response without any explanation.`,
+  template: `I'm going to give you two models in Langium textual format. Tell me only a single change that we may perform on the first model to make it more similar to the second model: \n currentModel='{currentModel}' \n and \n finalModel='{finalModel}'. \n Please, give me directly the response without any explanation.`,
 });
 
 const prompt2 = new PromptTemplate({
@@ -96,7 +96,7 @@ const main = traceable(
     let convergence: boolean = _.isEqual(JsonSerializer.serialize((await parse(currentModel)).parseResult.value), 
     JsonSerializer.serialize((await parse(finalModel)).parseResult.value));
     const MAX_LIMIT = 50;
-
+    const startTime = Date.now();
     // Iterate as long as the models are not convergent or the rounds don't exceed a fixed number
     try {
       let modelResponse;
@@ -124,7 +124,9 @@ const main = traceable(
       console.error(e);
       console.log(`An error has occurred.`);
     } finally {
+      const endTime = Date.now();
       console.log("Finished.");
+      console.log("Finished. Execution time:", endTime - startTime, "ms");
     }
   },
   { name: `Exp1 run ID: ${uuidv4()})` }

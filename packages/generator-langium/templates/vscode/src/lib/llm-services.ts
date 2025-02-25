@@ -102,8 +102,6 @@ export async function llmFetchResponse(
             tracer ? { callbacks: [tracer] } : {}
         );
 
-        console.log("rawResponse.content = ", rawResponse.content);
-
         if (!jsonSchema) {
             return rawResponse.content;
         }

@@ -4,6 +4,7 @@ coverage/
 dist/
 docs/
 lib/
+!./packages/generator-langium/templates/vscode/src/lib/**
 out/
 node_modules/
 *.vsix
