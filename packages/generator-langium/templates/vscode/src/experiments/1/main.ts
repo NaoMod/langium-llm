@@ -18,7 +18,7 @@ const parse = parseHelper<Model>(services.<%= LanguageName %>);
 // Prompts
 const prompt1 = new PromptTemplate({
   inputVariables: ["currentModel", "finalModel"],
-  template: `I'm going to give you two models in Langium textual format. Tell me only a single change that we may perform on the first model to make it more similar to the second model: \n {currentModel} \n and \n {finalModel}. \n Please, give me directly the response without any explanation.`,
+  template: `I'm going to give you two models in Langium textual format. Tell me only a single change that we may perform on the first model to make it more similar to the second model: \n currentModel='{currentModel}' \n and \n finalModel='{finalModel}'. \n Please, give me directly the response without any explanation.`,
 });
 
 const prompt2 = new PromptTemplate({
