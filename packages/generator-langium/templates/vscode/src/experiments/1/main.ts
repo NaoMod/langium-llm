@@ -4,16 +4,10 @@ import { traceable } from "langsmith/traceable";
 import { v4 as uuidv4 } from "uuid";
 import { mFinal } from "./mFinal.js";
 import { m0 } from "./m0.js";
-import { EmptyFileSystem } from "langium";
-import { Model } from "../../language/generated/ast.js";
-import { parseHelper } from "langium/test";
 import { llmFetchResponse } from "../../lib/llm-services.js";
 import { LangiumServices } from "../../language/langium-services.js";
-import { create<%= LanguageName %>Services } from "../../language/<%= language-id %>-module.js";
 
 export const JsonSerializer = LangiumServices.serializer.JsonSerializer;
-const services = create<%= LanguageName %>Services(EmptyFileSystem);
-const parse = parseHelper<Model>(services.<%= LanguageName %>);
 
 // Prompts
 const prompt1 = new PromptTemplate({
