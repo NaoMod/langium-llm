@@ -93,8 +93,7 @@ async function executeLLMsCommunication() {
 const main = traceable(
   async () => {
     // Models comparison
-    let convergence: boolean = _.isEqual(JsonSerializer.serialize((await parse(currentModel)).parseResult.value), 
-    JsonSerializer.serialize((await parse(finalModel)).parseResult.value));
+    let convergence: boolean = _.isEqual(currentModel, finalModel);
     const MAX_LIMIT = 50;
     const startTime = Date.now();
     // Iterate as long as the models are not convergent or the rounds don't exceed a fixed number
@@ -105,11 +104,10 @@ const main = traceable(
         modelResponse = await executeLLMsCommunication();
 
         // Update the current model with the new one
-        currentModel = modelResponse; 
+        currentModel = JSON.parse(modelResponse); 
 
         // If models are convergent, finished
-        if (_.isEqual(JsonSerializer.serialize((await parse(currentModel)).parseResult.value), 
-        JsonSerializer.serialize((await parse(finalModel)).parseResult.value))) {
+        if (_.isEqual(currentModel, finalModel)) {
           convergence = true;
         } else {
           round++;
