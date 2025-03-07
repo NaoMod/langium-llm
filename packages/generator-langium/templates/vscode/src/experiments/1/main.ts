@@ -12,12 +12,12 @@ export const JsonSerializer = LangiumServices.serializer.JsonSerializer;
 // Prompts
 const prompt1 = new PromptTemplate({
   inputVariables: ["currentModel", "finalModel"],
-  template: `I'm going to give you two models in Langium textual format. Tell me only a single change that we may perform on the first model to make it more similar to the second model: \n currentModel='{currentModel}' \n and \n finalModel='{finalModel}'. \n Please, give me directly the response without any explanation.`,
+  template: `I'm going to give you two models in JSON format. Tell me only a single change that we may perform on the first model to make it more similar to the second model: currentModel='{currentModel}' and finalModel='{finalModel}'. Please, give me directly the response without any explanation.`,
 });
 
 const prompt2 = new PromptTemplate({
   inputVariables: ["change", "currentModel"],
-  template: `Apply the following change \n "{change}" \n to the current model \n "{currentModel}" \n and give me back the updated model directly in Langium textual syntax without any markdown formatting, backticks, or other annotations.`,
+  template: `Apply the following change "{change}" to the current model "{currentModel}" and give me back the updated model, with a root object 'Model' as raw JSON data without any markdown formatting, backticks, or other annotations.`,
 });
 
 let currentModel = m0,
