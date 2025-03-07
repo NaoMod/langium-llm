@@ -62,7 +62,6 @@
         "@langchain/google-genai": "^0.1.6"
     },
     "devDependencies": {
-        "@types/lodash": "^4.17.15",
         "@types/vscode": "~1.67.0",
         "concurrently": "~8.2.1",
         "esbuild": "~0.20.2"

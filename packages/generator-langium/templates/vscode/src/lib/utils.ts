@@ -11,3 +11,16 @@ export class OutputParserMarkdown {
     return cleanedOutput;
   }
 }
+
+/**
+ * Normalizes a Langium model by removing leading and trailing whitespaces and trimming each line.
+ * @param model 
+ * @returns 
+ */
+export function normalizeModel(model: string): string {
+  return model
+    .trim() // Rimuove spazi bianchi iniziali e finali
+    .split('\n') // Divide in linee
+    .map(line => line.trim()) // Rimuove spazi bianchi da ogni linea
+    .join('\n'); // Ricompone il modello normalizzato
+}
