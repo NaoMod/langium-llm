@@ -59,6 +59,7 @@
     "examples/statemachine"
   ],
   "dependencies": {
+    "@langchain/ollama": "^0.2.0",
     "fs-extra": "^11.3.0"
   }
 }

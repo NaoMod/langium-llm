@@ -1,9 +1,7 @@
-import dotenv from "dotenv";
-
 import * as fs from "fs";
 import * as path from "node:path";
 
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { Ollama } from "@langchain/ollama";
 import {
     PromptTemplate,
     TypedPromptInputValues,
@@ -15,19 +13,6 @@ import { ParseResult } from "langium";
 import { OutputParserMarkdown } from "./utils.js";
 
 const dirname = getDirname();
-const fullPath = path.resolve(dirname, "../../config.env");
-
-console.log("fullPath:", fullPath);
-
-const envConfigResult = dotenv.config({
-  path: fullPath,
-});
-
-if (envConfigResult.error) {
-  console.error("Error loading .env file:", envConfigResult.error);
-} else {
-  console.log("configPath:", envConfigResult);
-}
 
 const LANGUAGE_ID = "<%= language-id %>";
 
@@ -35,7 +20,7 @@ const grammarPath = path.resolve(
     dirname,
     `../../src/language/${LANGUAGE_ID}.langium`
 );
-const langiumGrammar = fs.readFileSync(grammarPath, "utf-8");
+export const langiumGrammar = fs.readFileSync(grammarPath, "utf-8");
 
 export async function llmPromptPreparation(userQuestion: string, 
     editorMode: boolean = false, userEditorText: string = "") {
@@ -87,14 +72,9 @@ export async function llmFetchResponse(
     validation: boolean = false,
     tracer?: LangChainTracer
 ): Promise<any> {
-    const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
-    const GEMINI_MODEL = process.env.GEMINI_MODEL;
 
-    // Set up the Google Gemini LLM (using OpenAI as an example interface)
-    const llm = new ChatGoogleGenerativeAI({
-        model: GEMINI_MODEL,
-        maxOutputTokens: 2048,
-        apiKey: GOOGLE_API_KEY,
+    const llm = new Ollama({
+        model: "llama3.3:70b",
     });
 
     const currentRequest = formattedPrompt;
@@ -109,14 +89,14 @@ export async function llmFetchResponse(
             tracer ? { callbacks: [tracer] } : {}
         );
 
-        console.log("rawResponse.content = ", rawResponse.content);
+        console.log("rawResponse.content = ", rawResponse);
 
         if (!validation) {
-            return rawResponse.content;
+            return rawResponse;
         }
 
         try {
-            const cleanedOutput = parser.parse(rawResponse.content as string);
+            const cleanedOutput = parser.parse(rawResponse as string);
             const result: ParseResult =
                 LangiumServices.parser.LangiumParser.parse(cleanedOutput);
 
@@ -132,7 +112,7 @@ export async function llmFetchResponse(
 
                 throw new Error(
                     `The current response: \n ${
-                        rawResponse.content as string
+                        rawResponse as string
                     } \n, contains the following errors ${JSON.stringify(errors)}, so it doesn't represent a correct Langium model according its grammar. Please fix this model and return ONLY a correct one for the current request:\n${currentRequest}`
                 );
             }
@@ -142,7 +122,7 @@ export async function llmFetchResponse(
                 retries = 0;
             }
 
-            return rawResponse.content;
+            return rawResponse;
         } catch (error: any) {
             console.warn(
                 "Not a correct model received, trying again... Attempt #",
