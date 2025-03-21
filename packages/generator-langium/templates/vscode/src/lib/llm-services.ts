@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 
 import * as path from "node:path";
 
-import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
+import { Ollama } from "@langchain/ollama";
 import {
     PromptTemplate,
     TypedPromptInputValues,
@@ -11,16 +11,14 @@ import { LangChainTracer } from "langchain/callbacks";
 import { fileURLToPath } from "node:url";
 import { JsonOutputParserMarkdown } from "./utils.js";
 import { langiumSyntax2JsonFormat, validateJSONModel } from "./converters.js";
-import { schema as jsonSchema } from "../language/dtt.schema.json.js";
+import { jsonSchema } from "../language/dtt.schema.json.js";
 
 const dirname = getDirname();
 const fullPath = path.resolve(dirname, "../../config.env");
 
 console.log("fullPath:", fullPath);
 
-const envConfigResult = dotenv.config({
-    path: fullPath,
-});
+const envConfigResult = dotenv.config();
 
 if (envConfigResult.error) {
     console.error("Error loading .env file:", envConfigResult.error);
@@ -80,14 +78,9 @@ export async function llmFetchResponse(
     jsonSchema?: object,
     tracer?: LangChainTracer
 ): Promise<any> {
-    const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
-    const GEMINI_MODEL = process.env.GEMINI_MODEL;
-
     // Set up the Google Gemini LLM (using OpenAI as an example interface)
-    const llm = new ChatGoogleGenerativeAI({
-        model: GEMINI_MODEL,
-        maxOutputTokens: 2048,
-        apiKey: GOOGLE_API_KEY,
+    const llm = new Ollama({
+        model: "llama3.3:70b"
     });
 
     const currentRequest = formattedPrompt;
@@ -103,12 +96,12 @@ export async function llmFetchResponse(
         );
 
         if (!jsonSchema) {
-            return rawResponse.content;
+            return rawResponse;
         }
 
         // In this case validate the response as JSON valid object
         try {
-            const outputParsed = await parser.parse(rawResponse.content as string);
+            const outputParsed = await parser.parse(rawResponse as string);
             const outputParsedString = JSON.stringify(outputParsed);
 
             validateJSONModel(outputParsedString, jsonSchema);
@@ -127,7 +120,7 @@ export async function llmFetchResponse(
                 retries
             );
             formattedPrompt = `The current response: \n ${
-                rawResponse.content as string
+                rawResponse as string
             } \n, contains the following errors ${JSON.stringify(errors)}, so it doesn't represent a correct JSON model according toits grammar. Please fix this model and return ONLY a correct one for the current request:\n${currentRequest}`
             retries += 1;
         }

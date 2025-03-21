@@ -59,7 +59,8 @@
         "dotenv": "^16.4.5",
         "langchain": "^0.3.11",
         "@langchain/core": "^0.3.30",
-        "@langchain/google-genai": "^0.1.6"
+        "@langchain/google-genai": "^0.1.6",
+        "@langchain/ollama": "^0.2.0"
     },
     "devDependencies": {
         "@types/lodash": "^4.17.15",

@@ -1,2 +1,2 @@
-export const schema = {
+export const jsonSchema = {
 };
