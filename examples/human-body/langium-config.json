@@ -1,0 +1,12 @@
+{
+    "projectName": "HumanBody",
+    "languages": [{
+        "id": "human-body",
+        "grammar": "src/language/human-body.langium",
+        "fileExtensions": [".hb"],
+        "textMate": {
+            "out": "syntaxes/human-body.tmLanguage.json"
+        }
+    }],
+    "out": "src/language/generated"
+}
