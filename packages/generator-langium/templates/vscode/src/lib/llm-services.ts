@@ -6,10 +6,10 @@ import {
     PromptTemplate,
     TypedPromptInputValues,
 } from "@langchain/core/prompts";
-import { LangChainTracer } from "langchain/callbacks";
+import { Logger } from "winston";
 import { fileURLToPath } from "node:url";
 import { LangiumServices } from "../language/langium-services.js";
-import { ParseResult } from "langium";
+import { URI } from "langium";
 import { OutputParserMarkdown } from "./utils.js";
 
 const dirname = getDirname();
@@ -48,7 +48,7 @@ export async function llmPromptPreparation(userQuestion: string,
                 userInput: userEditorText,
             };
         }
-        mainPrompt.template += `{userQuestion}? \n I expect the response directly in the corresponding VALID Langium textual syntax according to the grammar provided, without any markdown and/or backticks, neither Model object root element. Also terminal types must be valid.`;
+        mainPrompt.template += `{userQuestion}? \n I expect the response directly in the corresponding VALID Langium textual syntax according to the grammar provided, without any markdown and/or backticks. Also terminal types must be valid.`;
 
         formattedPrompt = await mainPrompt.format(promptInputs);
     } else {
@@ -70,7 +70,7 @@ export async function llmPromptPreparation(userQuestion: string,
 export async function llmFetchResponse(
     formattedPrompt: string,
     validation: boolean = false,
-    tracer?: LangChainTracer
+    logger?: Logger
 ): Promise<any> {
 
     const llm = new Ollama({
@@ -81,39 +81,31 @@ export async function llmFetchResponse(
 
     let retries = 1;
     const MAX_RETRIES = 5;
-    const parser = new OutputParserMarkdown();
+    const outputParser = new OutputParserMarkdown();
     while (retries <= MAX_RETRIES) {
         // LLM invoke
         const rawResponse = await llm.invoke(
-            formattedPrompt,
-            tracer ? { callbacks: [tracer] } : {}
+            formattedPrompt
         );
-
-        console.log("rawResponse.content = ", rawResponse);
 
         if (!validation) {
             return rawResponse;
         }
 
         try {
-            const cleanedOutput = parser.parse(rawResponse as string);
-            const result: ParseResult =
-                LangiumServices.parser.LangiumParser.parse(cleanedOutput);
+            const cleanedOutput = outputParser.parse(rawResponse as string);
+            const uri = URI.parse(
+                `memory://temp.langium.${Date.now()}.langium`
+            );
 
-            if (result.parserErrors && result.parserErrors.length > 0) {
+            const document = LangiumServices.shared.workspace.LangiumDocuments.createDocument(uri, cleanedOutput);
+            await LangiumServices.shared.workspace.DocumentBuilder.build([document], { validation: true });
 
-                const errors: Array<{name: string, message: string}> = [];
-               
-                result.parserErrors.forEach((error) => {
-                    errors.push(
-                        { name: error.name, message: error.message }
-                    );
-                });
-
+            const validationErrors = (document.diagnostics ?? []).filter(e => e.severity === 1);
+            if (validationErrors.length > 0) { 
                 throw new Error(
-                    `The current response: \n ${
-                        rawResponse as string
-                    } \n, contains the following errors ${JSON.stringify(errors)}, so it doesn't represent a correct Langium model according its grammar. Please fix this model and return ONLY a correct one for the current request:\n${currentRequest}`
+                    `The current response: \n ${rawResponse as string
+                    } \n, contains the following errors ${JSON.stringify(validationErrors)}, so it doesn't represent a correct Langium model according to its grammar. Please fix this model and return ONLY a correct one for the current request:\n${currentRequest}`
                 );
             }
 
@@ -124,11 +116,21 @@ export async function llmFetchResponse(
 
             return rawResponse;
         } catch (error: any) {
-            console.warn(
-                "Not a correct model received, trying again... Attempt #",
-                retries
-            );
             formattedPrompt = `${error.message}`;
+
+            if (logger) {
+                logger.error(`${error}`);
+                logger.info(`Not a correct model received, trying again... Attempt #${retries}`);
+                logger.info(`formattedPrompt updated: \n ${formattedPrompt}`);
+            } else {
+                console.error(
+                    error,
+                    "Not a correct model received, trying again... Attempt #",
+                    retries
+                );
+                console.info(`formattedPrompt updated: \n ${formattedPrompt}`);
+            }
+
             retries += 1;
         }
     }
