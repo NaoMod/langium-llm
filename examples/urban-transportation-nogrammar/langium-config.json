@@ -1,0 +1,12 @@
+{
+    "projectName": "UrbanTransportation",
+    "languages": [{
+        "id": "urban-transportation",
+        "grammar": "src/language/urban-transportation.langium",
+        "fileExtensions": [".ut"],
+        "textMate": {
+            "out": "syntaxes/urban-transportation.tmLanguage.json"
+        }
+    }],
+    "out": "src/language/generated"
+}
