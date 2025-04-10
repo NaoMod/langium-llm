@@ -1,0 +1,17 @@
+Test,Duration(ms),Rounds,Convergence,Errors
+1,88478,16,true,false
+2,49932,9,true,false
+3,46736,8,true,false
+4,47783,9,true,false
+5,47522,7,true,false
+6,41125,6,true,false
+7,42691,7,true,false
+8,124222,20,true,false
+9,57318,9,true,false
+10,53448,10,true,false
+11,59553,9,true,false
+12,109050,17,true,false
+13,31849,4,true,false
+14,54488,9,true,false
+15,33071,5,true,false
+16,38609,5,true,false
