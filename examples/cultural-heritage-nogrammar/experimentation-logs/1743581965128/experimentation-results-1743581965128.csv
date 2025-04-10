@@ -1,0 +1,17 @@
+Test, Duration(ms), Rounds, Convergence, Error
+1, 7359, 1, false, true
+2, 17259, 7, false, true
+3, 14310, 5, false, true
+4, 16589, 10, true, false
+5, 14453, 3, false, true
+6, 28026, 16, true, false
+7, 6674, 1, false, true
+8, 16783, 11, true, false
+9, 6063, 2, false, true
+10, 5459, 4, false, true
+11, 36133, 18, true, false
+12, 18181, 10, true, false
+13, 31071, 18, true, false
+14, 7188, 4, false, true
+15, 19447, 13, true, false
+16, 26196, 19, true, false
