@@ -9,8 +9,11 @@ import {
 import { Logger } from "winston";
 import { fileURLToPath } from "node:url";
 import { LangiumServices } from "../language/langium-services.js";
-import { URI } from "langium";
-import { OutputParserMarkdown } from "./utils.js";
+import { Diagnostic } from "vscode-languageserver";
+import { parseHelper } from "langium/test";
+import { Model } from "../language/generated/ast.js";
+
+const parse = parseHelper<Model>(LangiumServices);
 
 const dirname = getDirname();
 
@@ -81,7 +84,7 @@ export async function llmFetchResponse(
 
     let retries = 1;
     const MAX_RETRIES = 5;
-    const outputParser = new OutputParserMarkdown();
+    
     while (retries <= MAX_RETRIES) {
         // LLM invoke
         const rawResponse = await llm.invoke(
@@ -93,19 +96,15 @@ export async function llmFetchResponse(
         }
 
         try {
-            const cleanedOutput = outputParser.parse(rawResponse as string);
-            const uri = URI.parse(
-                `memory://temp.langium.${Date.now()}.langium`
-            );
+            const document = await parse(rawResponse as string);
 
-            const document = LangiumServices.shared.workspace.LangiumDocuments.createDocument(uri, cleanedOutput);
             await LangiumServices.shared.workspace.DocumentBuilder.build([document], { validation: true });
 
-            const validationErrors = (document.diagnostics ?? []).filter(e => e.severity === 1);
+            const validationErrors: Diagnostic[] = (document.diagnostics ?? []).filter(e => e.severity === 1);
             if (validationErrors.length > 0) { 
                 throw new Error(
-                    `The current response: \n ${rawResponse as string
-                    } \n, contains the following errors ${JSON.stringify(validationErrors)}, so it doesn't represent a correct Langium model according to its grammar. Please fix this model and return ONLY a correct one for the current request:\n${currentRequest}`
+                    `The current response: \n ${rawResponse as string} 
+                    \n, contains the following errors: \n '${JSON.stringify(validationErrors)}' \n, so it doesn't represent a correct Langium model according to its grammar. Please fix this model and return ONLY a correct one for the current request:\n${currentRequest}`
                 );
             }
 
