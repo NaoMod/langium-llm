@@ -103,7 +103,7 @@
           "$ref": "#/definitions/NamedEntity/properties/description"
         },
         "power": {
-          "type": "string"
+          "type": "number"
         }
       },
       "required": ["$type", "name", "description", "power"]
@@ -188,7 +188,7 @@ export const jsonSchema = {
         "$type": { "const": "ReloaderStop" },
         "name": { "type": "string", "pattern": "^[_a-zA-Z][\\w_]*$" },
         "description": { "type": "string" },
-        "power": { "type": "string" }
+        "power": { "type": "number" }
       },
       "required": ["$type", "name", "description", "power"]
     }

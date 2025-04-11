@@ -53,12 +53,12 @@ export function convertDef(
 }
 
 function convertBus(bus: Bus): string {
-  return `Bus ${bus.name}: stop ${bus.atStop}${bus.batteryLevel ? `, battery ${bus.batteryLevel}` : ""
+  return `Bus ${bus.name}: stop ${bus.atStop.ref?.name}${bus.batteryLevel ? `, battery ${bus.batteryLevel}` : ""
     }`;
 }
 
 function convertRoute(route: Route): string {
-  return `Route ${route.name}: ${route.fromStop} => ${route.toStop}${route.consumption ? `, consumption ${route.consumption}` : ""
+  return `Route ${route.name}: ${route.fromStop.ref?.name} => ${route.toStop.ref?.name}${route.consumption ? `, consumption ${route.consumption}` : ""
     }`;
 }
 
@@ -130,19 +130,6 @@ export async function langiumStringToAST(
  * @returns
  */
 export function validateJSONModel(model: string, schema: object) {
-  /* const validator = new Validator({ schema });
- 
-   let result;
- 
-   try {
-     JSON.parse(model);
-     result = validator.validate(model);
-     console.log(result);
-   } catch (errors: any) {
-     throw new Error(errors);
-   }
- 
-   return result.valid || false; */
 
   const ajv = new Ajv();
   const validate = ajv.compile(schema);

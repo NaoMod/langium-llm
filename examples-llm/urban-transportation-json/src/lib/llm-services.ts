@@ -62,7 +62,7 @@ export async function llmFetchResponse(
     logger?: Logger
 ): Promise<any> {
 
-    const GOOGLE_API_KEY = '';
+    const GOOGLE_API_KEY = 'AIzaSyC4QIggzilwVmN6ddbf4H2VXMrcrVSTK_8';
     const GEMINI_MODEL = 'gemini-2.0-flash';
 
     const llm = new ChatGoogleGenerativeAI({
