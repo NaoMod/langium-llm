@@ -1,5 +1,3 @@
-import dotenv from "dotenv";
-
 import * as path from "node:path";
 
 import { Ollama } from "@langchain/ollama";
@@ -17,14 +15,6 @@ const dirname = getDirname();
 const fullPath = path.resolve(dirname, "../../config.env");
 
 console.log("fullPath:", fullPath);
-
-const envConfigResult = dotenv.config();
-
-if (envConfigResult.error) {
-    console.error("Error loading .env file:", envConfigResult.error);
-} else {
-    console.log("configPath:", envConfigResult);
-}
 
 export async function llmPromptPreparation(userQuestion: string,
     editorMode: boolean = false, userEditorText: string = "") {
@@ -78,7 +68,8 @@ export async function llmFetchResponse(
     jsonSchema?: object,
     tracer?: LangChainTracer
 ): Promise<any> {
-    // Set up the Google Gemini LLM (using OpenAI as an example interface)
+
+    // Set up your favourite LLM
     const llm = new Ollama({
         model: "llama3.3:70b"
     });

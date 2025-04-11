@@ -1,8 +1,8 @@
+import { Ajv } from "ajv";
 import { AstNode, LangiumDocument, URI } from "langium";
 import { NodeFileSystem } from "langium/node";
 import { create<%= LanguageName %>Services } from '../language/<%= language-id %>-module.js';
 import { Model } from "../language/generated/ast.js";
-import { Validator } from "@langchain/core/utils/json_schema";
 import { JsonSerializer } from "../langium-services.js";
 
 // retrieve the services for our language
@@ -75,17 +75,15 @@ export function langiumStringToAST(
  * @returns
  */
 export function validateJSONModel(model: string, schema: object) {
-  const validator = new Validator({ schema });
 
-  let result;
+  const ajv = new Ajv();
+  const validate = ajv.compile(schema);
+  const isValid = validate(JSON.parse(model));
 
-  try {
-    JSON.parse(model);
-    result = validator.validate(model);
-    console.log(result);
-  } catch (errors: any) {
-    throw new Error(errors);
+  if (!isValid) {
+    console.error("Validation errors:", validate.errors);
+    throw new Error(JSON.stringify(validate.errors));
   }
 
-  return result.valid || false;
+  return isValid;
 }
