@@ -1,0 +1,101 @@
+{
+    "name": "human-body",
+    "description": "Please enter a brief description here",
+    "version": "0.0.1-SNAPSHOT",
+    "files": [
+        "bin",
+        "out",
+        "src"
+    ],
+    "type": "module",
+    "scripts": {
+        "build": "tsc -b tsconfig.src.json && node esbuild.mjs",
+        "watch": "concurrently -n tsc,esbuild -c blue,yellow \"tsc -b tsconfig.src.json --watch\" \"node esbuild.mjs --watch\"",
+        "lint": "eslint src --ext ts",
+        "langium:generate": "langium generate",
+        "langium:generate:production": "langium generate --mode=production",
+        "langium:watch": "langium generate --watch",
+        "vscode:prepublish": "npm run build && npm run lint",
+        "start:experiment": "npm run build && node ./out/experimentation/main.js",
+        "test": "vitest run"
+    },
+    "dependencies": {
+        "langium": "~3.3.0",
+        "vscode-languageclient": "~9.0.1",
+        "vscode-languageserver": "~9.0.1",
+        "dotenv": "^16.4.5",
+        "langchain": "^0.3.11",
+        "@langchain/core": "^0.3.30",
+        "@langchain/google-genai": "^0.1.6",
+        "winston": "^3.17.0",
+        "chalk": "~5.3.0",
+        "commander": "~11.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "^18.0.0",
+        "@typescript-eslint/parser": "~7.3.1",
+        "@typescript-eslint/eslint-plugin": "~7.3.1",
+        "eslint": "~8.57.0",
+        "langium-cli": "~3.3.0",
+        "typescript": "~5.1.6",
+        "@types/vscode": "~1.67.0",
+        "concurrently": "~8.2.1",
+        "esbuild": "~0.20.2",
+        "vitest": "~1.4.0"
+    },
+    "volta": {
+        "node": "18.19.1",
+        "npm": "10.2.4"
+    },
+    "displayName": "human-body",
+    "engines": {
+        "vscode": "^1.67.0",
+        "node": ">=18.0.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "human-body",
+                "aliases": [
+                    "HumanBody",
+                    "human-body"
+                ],
+                "extensions": [".hb"],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "human-body",
+                "scopeName": "source.human-body",
+                "path": "syntaxes/human-body.tmLanguage.json"
+            }
+        ],
+        "viewsContainers": {
+            "activitybar": [
+                {
+                    "id": "secondaryPanel",
+                    "title": "DT LLM Chat",
+                    "icon": "media/images/icon.png"
+                }
+            ]
+        },
+        "views": {
+            "secondaryPanel": [
+                {
+                    "id": "geminiUiView",
+                    "name": "DT LLM Chat",
+                    "type": "webview"
+                }
+            ]
+        }
+    },
+    "activationEvents": [],
+    "main": "./out/extension/main.cjs",
+    "bin": {
+        "human-body-cli": "./bin/cli.js"
+    }
+}
