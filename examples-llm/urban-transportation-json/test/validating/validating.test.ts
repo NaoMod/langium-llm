@@ -22,15 +22,15 @@ beforeAll(async () => {
 describe('Validating JSON', () => {
 
     test('check no errors', async () => {
-        const jsonModel = { "$type": "Model", "defs": [{ "$type": "Bus", "name": "coastalShuttle", "atStop": { "$ref": "#/defs@2" }, "batteryLevel": "79" }, { "$type": "Route", "name": "oceanLine", "fromStop": { "$ref": "#/defs@2" }, "toStop": { "$ref": "#/defs@3" }, "consumption": "11" }, { "$type": "SimpleStop", "name": "seaSide", "description": "Seaside Bus Stop" }, { "$type": "SimpleStop", "name": "lighthousePoint", "description": "Lighthouse Point Terminal" }, { "$type": "Route", "name": "lighthouseLoop", "fromStop": { "$ref": "#/defs@3" }, "toStop": { "$ref": "#/defs@2" }, "consumption": "11" }, { "$type": "SimpleStop", "name": "beachFront", "description": "Beach Front Stop" }, { "$type": "ReloaderStop", "name": "beachFront2", "description": "Beach Front Charging Point", "power": "540" }] };
+        const jsonModel = { "$type": "Model", "defs": [{ "$type": "Bus", "name": "coastalShuttle", "atStop": { "$ref": "#/defs@2" }, "batteryLevel": 79 }, { "$type": "Route", "name": "oceanLine", "fromStop": { "$ref": "#/defs@2" }, "toStop": { "$ref": "#/defs@3" }, "consumption": 11 }, { "$type": "SimpleStop", "name": "seaSide", "description": "Seaside Bus Stop" }, { "$type": "SimpleStop", "name": "lighthousePoint", "description": "Lighthouse Point Terminal" }, { "$type": "Route", "name": "lighthouseLoop", "fromStop": { "$ref": "#/defs@3" }, "toStop": { "$ref": "#/defs@2" }, "consumption": 11 }, { "$type": "SimpleStop", "name": "beachFront", "description": "Beach Front Stop" }, { "$type": "ReloaderStop", "name": "beachFront2", "description": "Beach Front Charging Point", "power": 540 }] };
 
         expect(
             validateJSONModel(JSON.stringify(jsonModel), jsonSchema)
-            ).toBeTruthy();
+        ).toBeTruthy();
     });
 
     test('check errors', async () => {
-        
+
         let model = `
         Stop Central_Station: "Main transport hub in the city"  
         Stop Riverside: "Stop near the river park"  
@@ -53,6 +53,6 @@ describe('Validating JSON', () => {
 
         expect(
             validateJSONModel(jsonModel, jsonSchema)
-            ).toBeFalsy();
+        ).toBeFalsy();
     });
 });
