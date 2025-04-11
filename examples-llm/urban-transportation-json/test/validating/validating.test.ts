@@ -50,9 +50,14 @@ describe('Validating JSON', () => {
         model = normalizeModel(model);
 
         const jsonModel = await langiumSyntax2JsonFormat(model);
+        
+        let errors: boolean = false;
+        try {
+            validateJSONModel(jsonModel, jsonSchema);
+        } catch (error) {
+            errors = true;
+        }
 
-        expect(
-            validateJSONModel(jsonModel, jsonSchema)
-        ).toBeFalsy();
+        expect(errors).toBeTruthy();
     });
 });

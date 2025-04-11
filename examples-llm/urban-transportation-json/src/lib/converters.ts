@@ -137,7 +137,8 @@ export function validateJSONModel(model: string, schema: object) {
 
   if (!isValid) {
     console.error("Validation errors:", validate.errors);
+    throw new Error(JSON.stringify(validate.errors));
   }
 
-  return isValid || false;
+  return isValid;
 }
