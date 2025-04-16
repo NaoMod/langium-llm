@@ -9,7 +9,7 @@
 
 ---
 
-This is an extension of the orignal [![npm](https://https://github.com/eclipse-langium/langium)](Langium framework), aimed to facilitate interactions with LLMs during development with DSLs. Given a Langium-based DSL, we propose two approaches for the communication with the LLM: one based on the DSL concrete syntax and the other in its abstract syntax. The first one is commited on the current "main" branch, while the second one on a dedicated branch, "json_format".
+This is an extension of the orignal [Langium framework](https://github.com/eclipse-langium/langium) project, aimed to facilitate interactions with LLMs during development with DSLs. Given a Langium-based DSL, we propose two approaches for the communication with the LLM: one based on the DSL concrete syntax and the other in its abstract syntax. The first one is commited on the current "main" branch, while the second one on a dedicated branch, "json_format".
 Depending on the solution chosen, our extension generates a conversational interface that is aware of the grammar of the DSL concrete syntax or of the JSON Schema of its abstract syntax, enabling software engineers to collaborate with the LLM while developing in the DSL, using natural language instructions.
 
 
